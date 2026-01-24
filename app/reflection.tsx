@@ -37,7 +37,7 @@ export default function ReflectionScreen() {
         const cleanDump = String(dumpStr ?? "").trim();
         console.log("Reflection dump length:", cleanDump.length);
 
-        // If nothing was typed, don’t call API
+        // If nothing was typed, don't call API
         if (cleanDump.length === 0) {
           if (!cancelled) {
             setReflection("");
@@ -85,6 +85,11 @@ export default function ReflectionScreen() {
           if (!cancelled) setReflection(cleanDump);
           return;
         }
+
+        // DEBUG LOGGING - ADD THESE LINES
+        console.log("API Response Debug:", data.debug);
+        console.log("Model Used:", data.modelUsed);
+        console.log("Response Length:", data.text?.length);
 
         const aiText =
           typeof data?.text === "string" && data.text.trim().length > 0
@@ -206,4 +211,3 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
 });
-

@@ -10,36 +10,36 @@ function pickOpener(feelingLabel?: string, timeLabel?: string) {
   const f = (feelingLabel || "").toLowerCase();
   const t = (timeLabel || "").toLowerCase();
 
-  const late = t.includes("late") || t.includes("night");
-  const stressed = f.includes("stress") || f.includes("anx") || f.includes("overwhelm");
+  const late = t.includes("late") || t.includes("night") || t.includes("1 or later");
+  const stressed = f.includes("stress") || f.includes("anx") || f.includes("overwhelm") || f.includes("overthink");
   const ok = f.includes("okay") || f.includes("fine") || f.includes("neutral");
 
-  // Small banks (short, grounded, not poetic)
   const lateBank = [
-    "It’s late. Your mind is still on.",
-    "It’s been a long day. You’re still carrying it.",
-    "It’s late, and you’re still holding a lot.",
+    "Hey. I know it's late and your mind's still going.",
+    "You're still up, still thinking about all of this.",
+    "Late nights like this... when everything feels heavier.",
+    "It's late and you're still carrying all of this.",
   ];
 
   const stressedBank = [
-    "That sounds like a lot to carry.",
-    "I hear how heavy this feels.",
-    "You’ve been holding a lot today.",
+    "That's a lot spinning around in there.",
+    "I can feel how heavy this has been for you.",
+    "That sounds really overwhelming.",
+    "Your mind is working overtime with all of this.",
   ];
 
   const okBank = [
-    "Got it. A quieter kind of day.",
-    "That makes sense. Nothing big—just a lot of small things.",
-    "Okay. Just taking the day as it is.",
+    "Yeah, I get it. Just one of those days.",
+    "Nothing major, but still... a lot of little things adding up.",
+    "Sometimes the quiet days are their own kind of full.",
   ];
 
   const baseBank = [
+    "I'm here. I'm listening.",
+    "Thanks for sharing this with me.",
     "I hear you.",
-    "I’m with you in this moment.",
-    "Thank you for putting that into words.",
   ];
 
-  // Prioritize: late+stressed > stressed > late > ok > base
   const bank =
     late && stressed ? [...lateBank, ...stressedBank] :
     stressed ? stressedBank :
@@ -47,7 +47,6 @@ function pickOpener(feelingLabel?: string, timeLabel?: string) {
     ok ? okBank :
     baseBank;
 
-  // Deterministic-ish pick (avoid feeling random each render)
   const seedStr = `${f}|${t}`;
   let seed = 0;
   for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
@@ -56,28 +55,10 @@ function pickOpener(feelingLabel?: string, timeLabel?: string) {
   return bank[idx] || "I hear you.";
 }
 
-function enforceSentenceWordCap(text: string, maxWordsPerSentence = 14, maxSentences = 6) {
-  const clean = String(text || "").replace(/\s+/g, " ").trim();
-  if (!clean) return "";
-
-  // Split into sentences while keeping basic punctuation
-  const parts = clean.split(/(?<=[.!?])\s+/).filter(Boolean);
-
-  const capped = parts.slice(0, maxSentences).map((s) => {
-    const words = s.trim().split(/\s+/).filter(Boolean);
-    if (words.length <= maxWordsPerSentence) return s.trim();
-
-    // Trim to max words and add period if missing
-    const trimmed = words.slice(0, maxWordsPerSentence).join(" ");
-    const endsPunct = /[.!?]$/.test(trimmed);
-    return endsPunct ? trimmed : trimmed + ".";
-  });
-
-  return capped.join(" ").trim();
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  const debugInfo: string[] = [];
 
   try {
     const body: Body =
@@ -86,91 +67,102 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { dump, feelingLabel, timeLabel } = body || {};
     const cleanDump = String(dump ?? "").trim();
 
+    debugInfo.push(`Received dump with ${cleanDump.length} chars`);
+    debugInfo.push(`Feeling: ${feelingLabel}, Time: ${timeLabel}`);
+
     if (!cleanDump) return res.status(400).json({ error: "Missing dump text" });
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(500).json({ error: "Server missing ANTHROPIC_API_KEY" });
 
-    // Tone/time hints
-    const toneHint =
-      (feelingLabel || "").toLowerCase().includes("overwhelmed") ? "extra gentle, slower pace" :
-      (feelingLabel || "").toLowerCase().includes("stressed") ? "steady and reassuring" :
-      (feelingLabel || "").toLowerCase().includes("okay") ? "light, supportive, low-intensity" :
-      "neutral calm";
-
-    const timeHint =
-      (timeLabel || "").toLowerCase().includes("late") ? "shorter sentences, more soothing" :
-      "normal pacing";
-
-    // Opening phrase bank
     const opener = pickOpener(feelingLabel, timeLabel);
+    debugInfo.push(`Selected opener: ${opener}`);
 
-    const prompt = `
-You are Soft Unwind — a calm nighttime companion.
+    const prompt = `You're a close, trusted friend responding to someone who just shared what's weighing on their mind.
 
-Tone guidance:
-- Overall tone: ${toneHint}
-- Pacing: ${timeHint}
+Start with: "${opener}"
 
-Hard style constraints:
-- 4–6 sentences total
-- Each sentence must be 8–14 words (hard max 14)
-- Plain language. No metaphors. No poetic imagery.
-- No therapy language. No advice. No fixes. No “you should”.
+Then write 8-12 sentences responding to what they shared.
 
-Goal:
-Help the person feel heard and understood.
+EXAMPLES OF CORRECT RESPONSES:
 
-Structure:
-1) Start with this exact opening line (do not change it): "${opener}"
-2) One sentence that restates what they said (use their words if possible).
-3) One sentence that validates simply (e.g., “That makes sense.” “That’s a lot.”).
-4) 1–3 sentences that slow the moment down and reassure (no urgency, no solutions).
+User says: "I'm so tired and annoyed that I can't just fall asleep like a normal person."
+CORRECT response: "Late nights like this... when everything feels heavier. I hear you on that frustration about not being able to fall asleep like a 'normal person' - that comparison makes it even worse, doesn't it? Like you're failing at something that should be automatic. The annoyance on top of the tiredness is such a brutal combo. Your body is exhausted but your brain just won't cooperate. It's not fair that you can't just switch off when you need to. I wish I could give you that peaceful, easy sleep you're craving. Just know I'm here with you in this frustrating late-night moment. You're not alone in this."
 
-Avoid:
-- diagnosing or analyzing
-- explaining why they feel that way
-- telling them what to do next
-- generic filler like “I’m here for you” unless it fits specifically
+User says: "Work presentation went badly and my manager seemed disappointed."
+CORRECT response: "I hear you. That presentation not going well really stings, especially seeing that disappointment from your manager. You put effort into preparing and it didn't land the way you hoped. That's rough. The aftermath of something like that can sit heavy - replaying moments, wondering what you could have done differently. It's hard not to take it personally when someone you report to seems let down. But one tough presentation doesn't define your work or your value there. Even the best people have off days. I'm sorry it went that way today."
 
-Context:
-- Feeling label: ${feelingLabel || "unknown"}
-- Time label: ${timeLabel || "unknown"}
-- Journal dump: """${cleanDump}"""
-`;
+WRONG RESPONSE (DO NOT DO THIS):
+User says: "I'm so tired and annoyed that I can't just fall asleep like a normal person."
+WRONG: "Late nights like this when everything feels heavier. I hear you on the work stress and the project deadlines looming..." ← WRONG! User never mentioned work or projects!
 
-    const candidates = [
-      process.env.ANTHROPIC_MODEL,
+NOW RESPOND TO THIS USER:
+
+They're feeling: ${feelingLabel || "general"}
+Time of day: ${timeLabel || "evening"}
+
+What they shared:
+"""${cleanDump}"""
+
+Remember: ONLY respond to what they actually wrote. If they only mentioned sleep, only talk about sleep. If they mentioned work, talk about work. Match what they shared - nothing more, nothing less.`;
+
+    debugInfo.push("Prepared prompt, attempting API call");
+
+    // Try all available Claude models, newest to oldest
+    const models = [
+      // Claude 3.5 models (newest)
+      "claude-3-5-sonnet-20241022",  
+      "claude-3-5-sonnet-20240620",  
+      "claude-3-5-haiku-20241022",
+      
+      // Claude 3 models (older, more widely available)
       "claude-3-opus-20240229",
       "claude-3-sonnet-20240229",
       "claude-3-haiku-20240307",
-    ].filter(Boolean) as string[];
+    ];
 
-    let lastRaw = "";
-    let lastStatus = 500;
+    for (const model of models) {
+      debugInfo.push(`Trying model: ${model}`);
+      
+      try {
+        const startTime = Date.now();
+        
+        const r = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: 800,
+            temperature: 0.9,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
 
-    for (const model of candidates) {
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 220,
-          temperature: 0.6, // slightly lower = more consistent length/format
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
+        const elapsed = Date.now() - startTime;
+        debugInfo.push(`${model} responded in ${elapsed}ms with status ${r.status}`);
 
-      const raw = await r.text();
-      lastRaw = raw;
-      lastStatus = r.status;
+        if (!r.ok) {
+          const errorText = await r.text();
+          debugInfo.push(`${model} error: ${errorText.slice(0, 200)}`);
+          
+          // If model not found, try next one
+          if (r.status === 404) {
+            continue;
+          }
+          
+          // Other errors, return immediately
+          return res.status(r.status).json({
+            error: "API request failed",
+            details: errorText,
+            debug: debugInfo,
+          });
+        }
 
-      if (r.ok) {
-        const data = JSON.parse(raw);
+        const data = await r.json();
 
         const text =
           (Array.isArray(data?.content)
@@ -180,51 +172,39 @@ Context:
             : "") || "";
 
         const trimmed = text.trim();
+        
         if (!trimmed) {
-          return res.status(502).json({
-            error: "No text returned from Anthropic",
-            modelUsed: model,
-            details: raw,
-          });
+          debugInfo.push(`${model} returned empty response, trying next`);
+          continue;
         }
 
-        // Server-side hard enforcement (guarantee sentence length cap)
-        const finalText = enforceSentenceWordCap(trimmed, 14, 6);
+        debugInfo.push(`SUCCESS! Response: ${trimmed.length} chars`);
 
         return res.status(200).json({
-          text: finalText,
+          text: trimmed,
           modelUsed: model,
           openerUsed: opener,
+          debug: debugInfo,
         });
-      }
 
-      // Model not found → try next
-      try {
-        const errJson = JSON.parse(raw);
-        const msg = errJson?.error?.message || "";
-        if (r.status === 404 && msg.toLowerCase().includes("model")) continue;
-      } catch {
-        // ignore
+      } catch (fetchErr: any) {
+        debugInfo.push(`${model} fetch error: ${fetchErr.message}`);
+        continue;
       }
-
-      // Other errors → stop
-      return res.status(r.status).json({
-        error: "Claude request failed",
-        status: r.status,
-        details: raw,
-      });
     }
 
-    return res.status(404).json({
-      error: "No available Anthropic model found for this API key",
-      tried: candidates,
-      status: lastStatus,
-      details: lastRaw,
+    // If we got here, all models failed
+    return res.status(500).json({
+      error: "All models failed",
+      debug: debugInfo,
     });
+
   } catch (err: any) {
+    debugInfo.push(`Unexpected error: ${err.message}`);
     return res.status(500).json({
       error: "Unexpected server error",
       details: String(err?.message || err),
+      debug: debugInfo,
     });
   }
 }
