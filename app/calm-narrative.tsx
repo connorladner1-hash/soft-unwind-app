@@ -1,3 +1,4 @@
+import { ScreenMascot } from "@/components/ScreenMascot";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -20,6 +21,7 @@ export default function CalmNarrative() {
 
   return (
     <Screen style={{ justifyContent: "center" }}>
+        <ScreenMascot size={160} style={{ marginBottom: 16 }} />
       <Text style={styles.title}>You can let today be incomplete.</Text>
 
       <View style={styles.card}>

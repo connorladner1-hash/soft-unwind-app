@@ -1,3 +1,4 @@
+import { ScreenMascot } from "@/components/ScreenMascot";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -69,6 +70,7 @@ const initialItems = useMemo(() => extractParkingItems(sourceText), [sourceText]
 
   return (
     <Screen style={{ justifyContent: "flex-start" }}>
+      <ScreenMascot size={110} style={{ marginBottom: 8 }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: theme.space.l }}

@@ -11,7 +11,9 @@ import {
 } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
+import { ScreenMascot } from "../components/ScreenMascot";
 import { theme } from "../constants/theme";
+
 
 export default function BrainDump() {
   const params = useLocalSearchParams<{
@@ -27,8 +29,23 @@ export default function BrainDump() {
   const [text, setText] = useState("");
   const canContinue = useMemo(() => text.trim().length > 0, [text]);
 
+  const onContinue = () => {
+  const dump = text.trim();
+
+  router.push({
+    pathname: "/reflection",
+    params: {
+      dump,
+      feelingLabel,
+      timeLabel,
+    },
+  });
+};
+
+
   return (
     <Screen style={{ justifyContent: "flex-start", padding: 0 }}>
+      <ScreenMascot size={140} style={{ marginBottom: 12 }} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -61,13 +78,8 @@ export default function BrainDump() {
 
           <PrimaryButton
             label="Continue"
+            onPress={onContinue}
             disabled={!canContinue}
-            onPress={() =>
-              router.push({
-                pathname: "/reflection",
-                params: { dump: text, feelingLabel, timeLabel },
-              })
-            }
           />
         </ScrollView>
       </KeyboardAvoidingView>

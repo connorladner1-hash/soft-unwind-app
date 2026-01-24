@@ -1,3 +1,4 @@
+import { ScreenMascot } from "@/components/ScreenMascot";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -59,6 +60,7 @@ export default function CheckIn() {
 
   return (
     <Screen>
+        <ScreenMascot size={140} style={{ marginBottom: 12 }} />
       <View style={styles.centerWrap}>
         <Text style={styles.title}>How do you feel right now?</Text>
         <Text style={styles.sub}>It’s okay to be awake.</Text>

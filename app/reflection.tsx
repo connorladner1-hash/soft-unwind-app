@@ -1,3 +1,4 @@
+import { ScreenMascot } from "@/components/ScreenMascot";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -119,6 +120,7 @@ export default function ReflectionScreen() {
 
   return (
     <Screen style={{ justifyContent: "flex-start" }}>
+      <ScreenMascot size={130} style={{ marginBottom: 12 }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
