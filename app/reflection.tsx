@@ -15,12 +15,14 @@ import { theme } from "../constants/theme";
 const REFLECT_URL = "https://soft-reset-app.vercel.app/api/reflect";
 
 export default function ReflectionScreen() {
-  const { dump = "", feelingLabel = "", timeLabel = "" } =
-    useLocalSearchParams<{
-      dump?: string;
-      feelingLabel?: string;
-      timeLabel?: string;
-    }>();
+  const { dump = "", feelingLabel = "", timeLabel = "", userState = "" } =
+  useLocalSearchParams<{
+    dump?: string;
+    feelingLabel?: string;
+    timeLabel?: string;
+    userState?: string;
+  }>();
+
 
   const dumpStr = (dump ?? "").toString();
   const feelingStr = (feelingLabel ?? "").toString();
@@ -115,6 +117,7 @@ export default function ReflectionScreen() {
     router.push({
       pathname: "/parking-lot",
       params: {
+        userState,
         reflection: (reflection || "").trim() || dumpStr,
         dump: dumpStr,
         feelingLabel: feelingStr,

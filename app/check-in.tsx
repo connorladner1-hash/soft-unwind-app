@@ -9,11 +9,12 @@ import { theme } from "../constants/theme";
 type Option = { id: string; label: string };
 
 const FEELINGS: Option[] = [
-  { id: "overthinking", label: "Overthinking" },
-  { id: "anxious", label: "Anxious" },
-  { id: "wired", label: "Tired but wired" },
-  { id: "okay", label: "Mostly okay" },
+  { id: "brain", label: "My brain won’t stop" },
+  { id: "tense", label: "My body feels tense" },
+  { id: "restless", label: "I feel restless" },
+  { id: "lonely", label: "I feel lonely or heavy" },
 ];
+
 
 const TIMES: Option[] = [
   { id: "before-11", label: "Before 11" },
@@ -57,6 +58,7 @@ export default function CheckIn() {
 
   const feelingLabel = FEELINGS.find((f) => f.id === feelingId)?.label ?? "";
   const timeLabel = TIMES.find((t) => t.id === timeId)?.label ?? "";
+  const userState = feelingLabel;
 
   return (
     <Screen>
@@ -106,6 +108,7 @@ export default function CheckIn() {
             router.push({
               pathname: "/brain-dump",
               params: {
+                userState,
                 feelingId: feelingId ?? "",
                 feelingLabel,
                 timeId: timeId ?? "",

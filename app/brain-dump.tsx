@@ -17,6 +17,7 @@ import { theme } from "../constants/theme";
 
 export default function BrainDump() {
   const params = useLocalSearchParams<{
+    userState?: string;
     feelingId?: string;
     feelingLabel?: string;
     timeId?: string;
@@ -31,6 +32,7 @@ export default function BrainDump() {
 
   const onContinue = () => {
   const dump = text.trim();
+  const userState = (params.userState ?? "").toString();
 
   router.push({
     pathname: "/reflection",
@@ -38,6 +40,7 @@ export default function BrainDump() {
       dump,
       feelingLabel,
       timeLabel,
+      userState,
     },
   });
 };

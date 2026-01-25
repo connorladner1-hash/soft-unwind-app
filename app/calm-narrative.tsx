@@ -8,6 +8,7 @@ import { theme } from "../constants/theme";
 
 export default function CalmNarrative() {
   const params = useLocalSearchParams<{
+    userState?: string
     dump?: string;
     reflection?: string;
     feelingLabel?: string;
@@ -18,6 +19,7 @@ export default function CalmNarrative() {
   const reflection = (params.reflection ?? "").toString();
   const feelingLabel = (params.feelingLabel ?? "").toString();
   const timeLabel = (params.timeLabel ?? "").toString();
+  const userState = (params.userState ?? "").toString();
 
   return (
     <Screen style={{ justifyContent: "center" }}>
@@ -44,7 +46,7 @@ export default function CalmNarrative() {
         onPress={() =>
           router.push({
             pathname: "/breathe",
-            params: { dump, reflection, feelingLabel, timeLabel },
+            params: { userState, dump, reflection, feelingLabel, timeLabel },
           })
         }
       />
