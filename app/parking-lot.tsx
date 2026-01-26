@@ -1,6 +1,6 @@
 import { ScreenMascot } from "@/components/ScreenMascot";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -48,20 +48,28 @@ function extractParkingItems(raw: string): string[] {
 }
 
 export default function ParkingLot() {
-  // ✅ Pull both dump + reflection (and meta, if you want later)
   const params = useLocalSearchParams<{
     dump?: string;
+    reflection?: string;   // ✅ add (good to carry)
+    feelingId?: string;    // ✅ add (required for breathe)
     feelingLabel?: string;
+    timeId?: string;
     timeLabel?: string;
+    userState?: string;
   }>();
 
- const dump = normalizeText((params.dump ?? "").toString());
+  const dump = normalizeText((params.dump ?? "").toString());
+  const reflectionStr = (params.reflection ?? "").toString(); // ✅ add
+  const feelingIdStr = (params.feelingId ?? "").toString();   // ✅ add
+  const feelingLabelStr = (params.feelingLabel ?? "").toString();
+  const timeIdStr = (params.timeId ?? "").toString();
+  const timeLabelStr = (params.timeLabel ?? "").toString();
+  const userStateStr = (params.userState ?? "").toString();
 
-// ✅ Parking source: ONLY the user's brain dump
-const sourceText = dump;
+  // ✅ Parking source: ONLY the user's brain dump
+  const sourceText = dump;
 
-const initialItems = useMemo(() => extractParkingItems(sourceText), [sourceText]);
-
+  const initialItems = useMemo(() => extractParkingItems(sourceText), [sourceText]);
   const [items, setItems] = useState<string[]>(initialItems);
 
   const removeItem = (idx: number) => {
@@ -100,7 +108,20 @@ const initialItems = useMemo(() => extractParkingItems(sourceText), [sourceText]
 
         <PrimaryButton
           label="I’m ready to rest"
-          onPress={() => router.push("/calm-narrative")}
+          onPress={() =>
+            router.push({
+              pathname: "/calm-narrative",
+              params: {
+                dump,
+                reflection: reflectionStr,   // ✅ forward
+                feelingId: feelingIdStr,     // ✅ forward (critical)
+                feelingLabel: feelingLabelStr,
+                timeId: timeIdStr,
+                timeLabel: timeLabelStr,
+                userState: userStateStr,
+              },
+            })
+          }
         />
       </ScrollView>
     </Screen>
@@ -178,5 +199,4 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
 });
-
 

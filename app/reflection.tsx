@@ -1,6 +1,6 @@
 import { ScreenMascot } from "@/components/ScreenMascot";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -15,16 +15,23 @@ import { theme } from "../constants/theme";
 const REFLECT_URL = "https://soft-reset-app.vercel.app/api/reflect";
 
 export default function ReflectionScreen() {
-  const { dump = "", feelingLabel = "", timeLabel = "", userState = "" } =
-  useLocalSearchParams<{
-    dump?: string;
-    feelingLabel?: string;
-    timeLabel?: string;
-    userState?: string;
-  }>();
-
+  const {
+    dump = "",
+    feelingId = "", // ✅ add
+    feelingLabel = "",
+    timeLabel = "",
+    userState = "",
+  } =
+    useLocalSearchParams<{
+      dump?: string;
+      feelingId?: string; // ✅ add
+      feelingLabel?: string;
+      timeLabel?: string;
+      userState?: string;
+    }>();
 
   const dumpStr = (dump ?? "").toString();
+  const feelingIdStr = (feelingId ?? "").toString(); // ✅ add
   const feelingStr = (feelingLabel ?? "").toString();
   const timeStr = (timeLabel ?? "").toString();
 
@@ -62,6 +69,8 @@ export default function ReflectionScreen() {
               dump: cleanDump,
               feelingLabel: feelingStr,
               timeLabel: timeStr,
+              // feelingId is optional for reflect, but you can include it if you want:
+              // feelingId: feelingIdStr,
             }),
             signal: controller.signal,
           });
@@ -88,7 +97,6 @@ export default function ReflectionScreen() {
           return;
         }
 
-        // DEBUG LOGGING - ADD THESE LINES
         console.log("API Response Debug:", data.debug);
         console.log("Model Used:", data.modelUsed);
         console.log("Response Length:", data.text?.length);
@@ -118,8 +126,9 @@ export default function ReflectionScreen() {
       pathname: "/parking-lot",
       params: {
         userState,
-        reflection: (reflection || "").trim() || dumpStr,
         dump: dumpStr,
+        reflection: (reflection || "").trim() || dumpStr,
+        feelingId: feelingIdStr, // ✅ forward this
         feelingLabel: feelingStr,
         timeLabel: timeStr,
       },

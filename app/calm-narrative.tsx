@@ -1,6 +1,5 @@
 import { ScreenMascot } from "@/components/ScreenMascot";
 import { router, useLocalSearchParams } from "expo-router";
-import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -8,31 +7,29 @@ import { theme } from "../constants/theme";
 
 export default function CalmNarrative() {
   const params = useLocalSearchParams<{
-    userState?: string
+    userState?: string;
     dump?: string;
     reflection?: string;
+    feelingId?: string;     // ✅ add
     feelingLabel?: string;
     timeLabel?: string;
   }>();
 
   const dump = (params.dump ?? "").toString();
   const reflection = (params.reflection ?? "").toString();
+  const feelingId = (params.feelingId ?? "").toString(); // ✅ add
   const feelingLabel = (params.feelingLabel ?? "").toString();
   const timeLabel = (params.timeLabel ?? "").toString();
   const userState = (params.userState ?? "").toString();
 
   return (
     <Screen style={{ justifyContent: "center" }}>
-        <ScreenMascot size={160} style={{ marginBottom: 16 }} />
+      <ScreenMascot size={160} style={{ marginBottom: 16 }} />
       <Text style={styles.title}>You can let today be incomplete.</Text>
 
       <View style={styles.card}>
-        <Text style={styles.paragraph}>
-          Tonight isn’t for figuring everything out.
-        </Text>
-        <Text style={styles.paragraph}>
-          You already showed up. You already carried a lot.
-        </Text>
+        <Text style={styles.paragraph}>Tonight isn’t for figuring everything out.</Text>
+        <Text style={styles.paragraph}>You already showed up. You already carried a lot.</Text>
         <Text style={styles.paragraph}>
           Whatever didn’t get solved can wait for a version of you that’s rested.
         </Text>
@@ -46,7 +43,14 @@ export default function CalmNarrative() {
         onPress={() =>
           router.push({
             pathname: "/breathe",
-            params: { userState, dump, reflection, feelingLabel, timeLabel },
+            params: {
+              userState,
+              dump,
+              reflection,
+              feelingId,        // ✅ forward (critical)
+              feelingLabel,
+              timeLabel,
+            },
           })
         }
       />
@@ -78,4 +82,3 @@ const styles = StyleSheet.create({
     marginBottom: theme.space.s,
   },
 });
-

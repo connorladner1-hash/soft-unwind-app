@@ -1,4 +1,14 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+
+type Req = {
+  method?: string;
+  body?: any;
+};
+
+type Res = {
+  status: (code: number) => Res;
+  json: (data: any) => void;
+};
+
 
 type Body = {
   dump?: string;
@@ -55,8 +65,8 @@ function pickOpener(feelingLabel?: string, timeLabel?: string) {
   return bank[idx] || "I hear you.";
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+export default async function handler(req: Req, res: Res) {
+
 
   const debugInfo: string[] = [];
 

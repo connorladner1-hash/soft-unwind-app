@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -14,7 +14,6 @@ import { Screen } from "../components/Screen";
 import { ScreenMascot } from "../components/ScreenMascot";
 import { theme } from "../constants/theme";
 
-
 export default function BrainDump() {
   const params = useLocalSearchParams<{
     userState?: string;
@@ -24,27 +23,32 @@ export default function BrainDump() {
     timeLabel?: string;
   }>();
 
+  const feelingId = (params.feelingId ?? "").toString();
   const feelingLabel = (params.feelingLabel ?? "").toString();
+  const timeId = (params.timeId ?? "").toString();
   const timeLabel = (params.timeLabel ?? "").toString();
+  const userState = (params.userState ?? "").toString();
 
   const [text, setText] = useState("");
   const canContinue = useMemo(() => text.trim().length > 0, [text]);
 
   const onContinue = () => {
-  const dump = text.trim();
-  const userState = (params.userState ?? "").toString();
+    const dump = text.trim();
 
-  router.push({
-    pathname: "/reflection",
-    params: {
-      dump,
-      feelingLabel,
-      timeLabel,
-      userState,
-    },
-  });
-};
+    router.push({
+      pathname: "/reflection",
+      params: {
+        dump,
 
+        // 👇 forward these so later screens (breathe.tsx) know what was selected
+        feelingId,
+        feelingLabel,
+        timeId,
+        timeLabel,
+        userState,
+      },
+    });
+  };
 
   return (
     <Screen style={{ justifyContent: "flex-start", padding: 0 }}>
@@ -64,7 +68,9 @@ export default function BrainDump() {
 
           {feelingLabel || timeLabel ? (
             <View style={styles.metaRow}>
-              {!!feelingLabel && <Text style={styles.metaPill}>{feelingLabel}</Text>}
+              {!!feelingLabel && (
+                <Text style={styles.metaPill}>{feelingLabel}</Text>
+              )}
               {!!timeLabel && <Text style={styles.metaPill}>{timeLabel}</Text>}
             </View>
           ) : null}
@@ -138,6 +144,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.space.l,
   },
 });
+
 
 
 
