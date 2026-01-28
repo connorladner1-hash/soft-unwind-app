@@ -1,3 +1,6 @@
+// api/breathe.ts (or api/breathe.tsx — but this is a server file)
+// COPY/PASTE THE ENTIRE FILE
+
 type Req = {
   method?: string;
   body?: any;
@@ -11,11 +14,7 @@ type Res = {
 type FeelingId = "brain" | "tense" | "restless" | "lonely";
 
 type Body = {
-  // new
   feelingId?: string;
-  optionPrompt?: string;
-
-  // existing
   userState?: string;
   dump?: string;
   reflection?: string;
@@ -92,7 +91,7 @@ function isFeelingId(x: any): x is FeelingId {
   return x === "brain" || x === "tense" || x === "restless" || x === "lonely";
 }
 
-// Back-compat: map the old userState label to a FeelingId
+// Back-compat: map older userState labels to a FeelingId
 function mapUserStateToFeelingId(raw: string): FeelingId {
   const s = (raw ?? "").toLowerCase();
   if (s.includes("tense")) return "tense";
@@ -114,54 +113,75 @@ function containsForbiddenDrift(output: string, allowed: string) {
   return FORBIDDEN.some((w) => o.includes(w) && !a.includes(w));
 }
 
-function validateResponse(parsed: any): parsed is { title: string; prompts: string[] } {
-  if (!parsed?.title || typeof parsed.title !== "string") return false;
-  if (!Array.isArray(parsed?.prompts)) return false;
-  if (parsed.prompts.length !== 4) return false;
-
-  const cleaned = parsed.prompts
-    .map((p: any) => (typeof p === "string" ? p.trim() : ""))
-    .filter(Boolean);
-
-  if (cleaned.length !== 4) return false;
-
-  // Keep prompts short-ish so they fit your UI nicely
-  if (cleaned.some((p) => p.length > 180)) return false;
-
-  return true;
+/**
+ * If the model adds extra text, try to extract the first {...} JSON object.
+ */
+function extractJsonObject(raw: string): string | null {
+  if (!raw) return null;
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+  return raw.slice(start, end + 1);
 }
 
-function buildUserPrompt(args: {
-  feelingId: FeelingId;
-  optionPrompt: string;
-  dump: string;
-  reflection: string;
-}) {
-  const { feelingId, optionPrompt, dump, reflection } = args;
+/**
+ * Turn model output into a safe payload.
+ * - exactly 4 prompts
+ * - strings only
+ * - trimmed
+ * - cap length so UI is safe
+ */
+function sanitizePayload(parsed: any): { title: string; prompts: string[] } | null {
+  if (!parsed || typeof parsed !== "object") return null;
 
-  // Universal formatting constraints for your UI
-  const outputContract = `
-Output ONLY valid JSON (no markdown, no extra text):
-{"title":"...","prompts":["...","...","...","..."]}
+  const title = typeof parsed.title === "string" ? normalizeText(parsed.title) : "";
+  const promptsRaw = Array.isArray(parsed.prompts) ? parsed.prompts : null;
+  if (!title || !promptsRaw) return null;
 
-Constraints:
-- title: 2–5 words, calm, not cheesy
-- prompts: exactly 4 short lines, no numbering, no quotes around them
-- no questions
-- keep each prompt under ~160 characters
-`.trim();
+  // Clean strings only
+  let prompts: string[] = promptsRaw
+    .map((p: unknown): string => (typeof p === "string" ? normalizeText(p) : ""))
+    .filter((p: string) => Boolean(p));
 
-  // We treat your option prompt as the primary behavior spec.
-  // Then we add an output contract and (optional) personalization context.
+  // Must have at least 4 usable lines
+  if (prompts.length < 4) return null;
+
+  // Only first 4
+  prompts = prompts.slice(0, 4);
+
+  // Hard cap for UI stability (don't fail, just trim)
+  const CAP = 180;
+  prompts = prompts.map((p: string) => (p.length > CAP ? p.slice(0, CAP - 1) + "…" : p));
+
+  // No questions (keep consistent with your rules)
+  if (prompts.some((p: string) => p.includes("?"))) return null;
+
+  return { title, prompts };
+}
+
+function buildUserPrompt(args: { feelingId: FeelingId; dump: string; reflection: string }) {
+  const { feelingId, dump, reflection } = args;
+
+  // More “JSON only” force + shorter spec to reduce rambly outputs
   return `
-${optionPrompt}
+You are writing calm, late-night guidance.
+Mode: "${feelingId}"
 
-Context (optional, for subtle personalization only):
-- User dump: "${dump}"
-- Reflection shown: "${reflection}"
-- Mode: "${feelingId}"
+Rules:
+- No advice, no fixing, no questions
+- No therapy/medical language
+- Keep it simple, slow, and sleep-safe
 
-${outputContract}
+Write:
+- A short title (2–5 words)
+- Exactly 4 short prompts (each under ~160 chars)
+
+Personal context (use subtly, don’t mention specifics):
+- Dump: "${dump}"
+- Reflection: "${reflection}"
+
+Output ONLY valid JSON, nothing else:
+{"title":"...","prompts":["...","...","...","..."]}
 `.trim();
 }
 
@@ -171,30 +191,25 @@ export default async function handler(req: Req, res: Res) {
   }
 
   try {
-    const body: Body =
-      typeof req.body === "string" ? JSON.parse(req.body) : req.body ?? {};
+    const body: Body = typeof req.body === "string" ? JSON.parse(req.body) : req.body ?? {};
 
     const dump = normalizeText(body.dump ?? "");
     const reflection = normalizeText(body.reflection ?? "");
     const rawFeelingId = normalizeText(body.feelingId ?? "");
     const rawState = normalizeText(body.userState ?? "");
-    const optionPrompt = normalizeText(body.optionPrompt ?? "");
 
-    // Resolve mode:
-    // 1) prefer feelingId if provided
-    // 2) else fall back to mapping userState label
     const resolvedFeelingId: FeelingId = isFeelingId(rawFeelingId)
       ? rawFeelingId
       : mapUserStateToFeelingId(rawState);
 
-    // If optionPrompt is missing, fall back immediately (keeps behavior stable)
-    if (!optionPrompt) {
+    // If missing required text, still fallback but 200 (keeps UX smooth)
+    if (!dump || !reflection) {
       const fallback = FALLBACK_SETS[resolvedFeelingId];
       return res.status(200).json({
         title: fallback.title,
         prompts: fallback.prompts,
         modelUsed: "fallback",
-        note: "missing_optionPrompt",
+        note: "missing_dump_or_reflection",
       });
     }
 
@@ -205,13 +220,14 @@ export default async function handler(req: Req, res: Res) {
         title: fallback.title,
         prompts: fallback.prompts,
         modelUsed: "fallback",
-        note: "missing_api_key",
+        note: "fallback_used",
+        debugReason: "missing_api_key",
+        debugModelText: "",
       });
     }
 
     const userPrompt = buildUserPrompt({
       feelingId: resolvedFeelingId,
-      optionPrompt,
       dump,
       reflection,
     });
@@ -227,57 +243,61 @@ export default async function handler(req: Req, res: Res) {
       },
       body: JSON.stringify({
         model,
-        max_tokens: 450,
-        temperature: 0.6,
+        max_tokens: 350,
+        temperature: 0.3,
         messages: [{ role: "user", content: userPrompt }],
       }),
     });
 
     const raw = await r.text();
+
     if (!r.ok) {
-      // fall back gracefully
       const fallback = FALLBACK_SETS[resolvedFeelingId];
       return res.status(200).json({
         title: fallback.title,
         prompts: fallback.prompts,
         modelUsed: model,
         note: "anthropic_error_fallback",
-        debug: raw.slice(0, 500),
+        debug: process.env.NODE_ENV === "production" ? undefined : raw.slice(0, 500),
       });
     }
 
     const data = JSON.parse(raw);
-    const text = Array.isArray(data?.content)
-      ? data.content.map((c: any) => c.text).join("\n")
-      : "";
+    const text = Array.isArray(data?.content) ? data.content.map((c: any) => c.text).join("\n") : "";
 
+    const maybeJson = extractJsonObject(text.trim());
     let parsed: any = null;
+
     try {
-      parsed = JSON.parse(text.trim());
+      parsed = JSON.parse((maybeJson ?? text).trim());
     } catch {
       parsed = null;
     }
 
-    if (parsed && validateResponse(parsed)) {
-      const title = normalizeText(parsed.title);
-      const prompts = parsed.prompts.map(normalizeText);
+    const sanitized = sanitizePayload(parsed);
 
-      const combined = `${title} ${prompts.join(" ")}`;
+    if (sanitized) {
+      const combined = `${sanitized.title} ${sanitized.prompts.join(" ")}`;
       const allowed = `${dump} ${reflection}`;
 
-      // Prevent “forbidden drift” unless it was already in user text
       if (!containsForbiddenDrift(combined, allowed)) {
-        return res.status(200).json({ title, prompts, modelUsed: model });
+        return res.status(200).json({
+          title: sanitized.title,
+          prompts: sanitized.prompts,
+          modelUsed: model,
+        });
       }
     }
 
-    // If JSON parse/validation fails, fall back safely
+    // 🧯 Late fallback: model responded but failed parsing / validation / drift
     const fallback = FALLBACK_SETS[resolvedFeelingId];
     return res.status(200).json({
       title: fallback.title,
       prompts: fallback.prompts,
       modelUsed: model,
       note: "fallback_used",
+      debugReason: "parse_failed_or_validation_failed_or_forbidden_drift",
+      debugModelText: (text ?? "").slice(0, 800),
     });
   } catch (err: any) {
     return res.status(500).json({
