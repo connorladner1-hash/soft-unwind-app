@@ -122,18 +122,19 @@ export default function ReflectionScreen() {
   }, [dumpStr, feelingStr, timeStr]);
 
   const onContinue = () => {
-    router.push({
-      pathname: "/parking-lot",
-      params: {
-        userState,
-        dump: dumpStr,
-        reflection: (reflection || "").trim() || dumpStr,
-        feelingId: feelingIdStr, // ✅ forward this
-        feelingLabel: feelingStr,
-        timeLabel: timeStr,
-      },
-    });
-  };
+  router.push({
+    pathname: "/paywallScreen",
+    params: {
+      userState,
+      dump: dumpStr,
+      reflection: (reflection || "").trim() || dumpStr,
+      feelingId: feelingIdStr,
+      feelingLabel: feelingStr,
+      timeLabel: timeStr,
+    },
+  });
+};
+
 
   return (
     <Screen style={{ justifyContent: "flex-start" }}>

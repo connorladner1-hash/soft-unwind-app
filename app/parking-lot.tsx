@@ -85,6 +85,8 @@ export default function ParkingLot() {
       >
         <Text style={styles.title}>These can wait.</Text>
         <Text style={styles.sub}>I’ll hold them for tomorrow.</Text>
+        <Text style={styles.subSoft}>Nothing here needs action tonight.</Text>
+
 
         <View style={styles.card}>
           {items.length === 0 ? (
@@ -198,5 +200,11 @@ const styles = StyleSheet.create({
     marginBottom: theme.space.l,
     color: theme.colors.text,
   },
+  subSoft: {
+  fontSize: 13,
+  opacity: 0.55,
+  marginBottom: theme.space.m,
+  color: theme.colors.text,
+},
 });
 

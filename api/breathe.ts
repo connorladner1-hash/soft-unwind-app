@@ -138,24 +138,26 @@ function sanitizePayload(parsed: any): { title: string; prompts: string[] } | nu
   const promptsRaw = Array.isArray(parsed.prompts) ? parsed.prompts : null;
   if (!title || !promptsRaw) return null;
 
-  // Clean strings only
-  let prompts: string[] = promptsRaw
-    .map((p: unknown): string => (typeof p === "string" ? normalizeText(p) : ""))
-    .filter((p: string) => Boolean(p));
+ // Clean strings only
+let prompts: string[] = promptsRaw
+  .map((p: unknown): string => (typeof p === "string" ? normalizeText(p) : ""))
+  .filter((p: string) => Boolean(p));
 
-  // Must have at least 4 usable lines
-  if (prompts.length < 4) return null;
+// If model gave fewer than 4 usable lines, reject
+if (prompts.length < 4) return null;
 
-  // Only first 4
-  prompts = prompts.slice(0, 4);
+// Force exactly 4 (prevents lonely edge cases)
+prompts = prompts.slice(0, 4);
+// Final safety: ensure exactly 4 prompts
+if (prompts.length !== 4) return null;
+
 
   // Hard cap for UI stability (don't fail, just trim)
   const CAP = 180;
   prompts = prompts.map((p: string) => (p.length > CAP ? p.slice(0, CAP - 1) + "…" : p));
 
-  // No questions (keep consistent with your rules)
-  if (prompts.some((p: string) => p.includes("?"))) return null;
-
+    // No questions: if the model slips a "?", convert to a period (avoid triggering fallback)
+  prompts = prompts.map((p: string) => p.replace(/\?/g, ".").trim());
   return { title, prompts };
 }
 
@@ -168,8 +170,10 @@ You are writing calm, late-night guidance.
 Mode: "${feelingId}"
 
 Rules:
-- No advice, no fixing, no questions
+- No advice, no fixing
+- No questions (do not use the "?" character)
 - No therapy/medical language
+- Do not mention any of these topics/words: work, job, boss, deadline, project, money, rent, bills, family, mom, dad, sister, brother, relationship, girlfriend, boyfriend, medical, diagnosis, therapy, therapist
 - Keep it simple, slow, and sleep-safe
 
 Write:

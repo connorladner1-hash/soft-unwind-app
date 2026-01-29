@@ -1,6 +1,6 @@
 import { ScreenMascot } from "@/components/ScreenMascot";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -66,6 +66,8 @@ export default function CheckIn() {
       <View style={styles.centerWrap}>
         <Text style={styles.title}>How do you feel right now?</Text>
         <Text style={styles.sub}>It’s okay to be awake.</Text>
+        <Text style={styles.subSoft}>No perfect answer.</Text>
+
 
         <View style={styles.grid}>
           <View style={styles.col}>
@@ -190,6 +192,15 @@ const styles = StyleSheet.create({
   optionTextSelected: {
     fontWeight: "700",
   },
+
+  subSoft: {
+  fontSize: theme.type.subSize,
+  lineHeight: theme.type.subLine,
+  opacity: 0.55,
+  marginBottom: theme.space.l,
+  color: theme.colors.text,
+  textAlign: "center",
+},
 });
 
 

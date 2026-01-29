@@ -65,6 +65,8 @@ export default function BrainDump() {
         >
           <Text style={styles.title}>Let it out.</Text>
           <Text style={styles.sub}>No formatting. No judgment.</Text>
+          <Text style={styles.subSoft}>This is just to empty.</Text>
+
 
           {feelingLabel || timeLabel ? (
             <View style={styles.metaRow}>
@@ -143,6 +145,14 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: theme.space.l,
   },
+
+  subSoft: {
+  fontSize: theme.type.subSize,
+  lineHeight: theme.type.subLine,
+  opacity: 0.55,
+  marginBottom: theme.space.m,
+  color: theme.colors.text,
+},
 });
 
 

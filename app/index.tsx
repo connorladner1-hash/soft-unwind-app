@@ -5,11 +5,11 @@ import { Screen } from "../components/Screen";
 import { ScreenMascot } from "../components/ScreenMascot";
 import { theme } from "../constants/theme";
 
-
 export default function Welcome() {
   return (
     <Screen style={{ justifyContent: "center" }}>
-       <ScreenMascot size={180} style={{ marginBottom: 16 }} /> 
+      <ScreenMascot size={180} style={{ marginBottom: 16 }} />
+
       <View style={styles.container}>
         <Text style={styles.title}>
           Can’t sleep because your brain won’t shut up?
@@ -36,4 +36,3 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
 });
-
