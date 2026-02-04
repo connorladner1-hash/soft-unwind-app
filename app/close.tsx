@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { GlassCard } from "../components/ui/GlassCard";
 import { Screen } from "../components/Screen";
 import { theme } from "../constants/theme";
 
@@ -31,7 +32,7 @@ export default function Close() {
           You’re allowed to stop thinking now.
         </Text>
 
-        <View style={styles.card}>
+        <GlassCard style={styles.card}>
           <Text style={styles.line}>
             If your mind starts up again, you can come back to one breath.
           </Text>
@@ -41,7 +42,7 @@ export default function Close() {
           <Text style={[styles.line, { marginBottom: 0 }]}>
             Rest is still progress.
           </Text>
-        </View>
+        </GlassCard>
 
         <PrimaryButton
           label="You are now Reset. See you tomorrow."
@@ -86,10 +87,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   card: {
-    borderRadius: theme.radius.m,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: theme.space.m,
     marginBottom: theme.space.l,
   },

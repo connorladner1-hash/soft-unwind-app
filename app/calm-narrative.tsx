@@ -2,6 +2,7 @@ import { ScreenMascot } from "@/components/ScreenMascot";
 import { router, useLocalSearchParams } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { GlassCard } from "../components/ui/GlassCard";
 import { Screen } from "../components/Screen";
 import { theme } from "../constants/theme";
 
@@ -27,7 +28,7 @@ export default function CalmNarrative() {
       <ScreenMascot size={160} style={{ marginBottom: 16 }} />
       <Text style={styles.title}>You can let today be incomplete.</Text>
 
-      <View style={styles.card}>
+      <GlassCard style={styles.card}>
         <Text style={styles.paragraph}>Tonight isn’t for figuring everything out.</Text>
         <Text style={styles.paragraph}>You already showed up. You already carried a lot.</Text>
         <Text style={styles.paragraph}>
@@ -36,7 +37,7 @@ export default function CalmNarrative() {
         <Text style={styles.paragraph}>
           Right now, your only job is to soften. To slow down. To come back to your body.
         </Text>
-      </View>
+      </GlassCard>
 
       <PrimaryButton
         label="I’m ready"
@@ -67,11 +68,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   card: {
-    borderRadius: theme.radius.m,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.space.m,
     marginBottom: theme.space.l,
   },
   paragraph: {

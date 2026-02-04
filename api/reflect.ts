@@ -92,29 +92,23 @@ export default async function handler(req: Req, res: Res) {
 
 Start with: "${opener}"
 
-Then write 8-12 sentences responding to what they shared.
+Constraints:
+- 2 to 4 sentences total
+- 55 to 90 words total
+- Warm, quiet, simple tone
+- No advice, no action steps, no analysis, no reframing
+- Do not say "you should", "try to", "take deep breaths", or "you've got this"
+- No therapy, crisis support, or motivational cheerleading
+- Only respond to what they actually wrote
+- Structure: sentence 1 mirrors emotion; sentence 2 normalizes; optional sentence 3 gives permission; optional sentence 4 gently transitions toward downshift
+- If they selected "my body feels tense", you may include one gentle body acknowledgement (not instruction)
 
-EXAMPLES OF CORRECT RESPONSES:
-
-User says: "I'm so tired and annoyed that I can't just fall asleep like a normal person."
-CORRECT response: "Late nights like this... when everything feels heavier. I hear you on that frustration about not being able to fall asleep like a 'normal person' - that comparison makes it even worse, doesn't it? Like you're failing at something that should be automatic. The annoyance on top of the tiredness is such a brutal combo. Your body is exhausted but your brain just won't cooperate. It's not fair that you can't just switch off when you need to. I wish I could give you that peaceful, easy sleep you're craving. Just know I'm here with you in this frustrating late-night moment. You're not alone in this."
-
-User says: "Work presentation went badly and my manager seemed disappointed."
-CORRECT response: "I hear you. That presentation not going well really stings, especially seeing that disappointment from your manager. You put effort into preparing and it didn't land the way you hoped. That's rough. The aftermath of something like that can sit heavy - replaying moments, wondering what you could have done differently. It's hard not to take it personally when someone you report to seems let down. But one tough presentation doesn't define your work or your value there. Even the best people have off days. I'm sorry it went that way today."
-
-WRONG RESPONSE (DO NOT DO THIS):
-User says: "I'm so tired and annoyed that I can't just fall asleep like a normal person."
-WRONG: "Late nights like this when everything feels heavier. I hear you on the work stress and the project deadlines looming..." ← WRONG! User never mentioned work or projects!
-
-NOW RESPOND TO THIS USER:
-
+Now respond to this user:
 They're feeling: ${feelingLabel || "general"}
 Time of day: ${timeLabel || "evening"}
 
 What they shared:
-"""${cleanDump}"""
-
-Remember: ONLY respond to what they actually wrote. If they only mentioned sleep, only talk about sleep. If they mentioned work, talk about work. Match what they shared - nothing more, nothing less.`;
+"""${cleanDump}"""`;
 
     debugInfo.push("Prepared prompt, attempting API call");
 

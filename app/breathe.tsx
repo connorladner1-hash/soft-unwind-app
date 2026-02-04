@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { GlassCard } from "../components/ui/GlassCard";
 import { Screen } from "../components/Screen";
 import { theme } from "../constants/theme";
 import { getBreathe, makeKey, setBreathe, type BreathePayload } from "./lib/sessionCache";
@@ -165,7 +166,7 @@ export default function Breathe() {
       <Text style={styles.title}>{payload?.title || "…"}</Text>
       <Text style={styles.sub}>Under a minute. Nothing to perfect.</Text>
 
-      <View style={styles.card}>
+      <GlassCard variant="soft" style={styles.card}>
         {loading ? (
           <View style={{ alignItems: "center", gap: theme.space.s }}>
             <ActivityIndicator />
@@ -179,7 +180,7 @@ export default function Breathe() {
           <Text style={styles.timerLabel}>A moment</Text>
           <Text style={styles.timer}>{formatMMSS(secondsLeft)}</Text>
         </View>
-      </View>
+      </GlassCard>
 
       <PrimaryButton label={done ? "Continue" : "Go on"} onPress={() => router.push("/close")} />
     </Screen>
@@ -204,11 +205,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   card: {
-    borderRadius: theme.radius.m,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.space.l,
     marginBottom: theme.space.l,
     minHeight: 170,
     justifyContent: "center",

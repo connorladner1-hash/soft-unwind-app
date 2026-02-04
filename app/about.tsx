@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { GlassCard } from "../components/ui/GlassCard";
 import { Screen } from "../components/Screen";
 import { theme } from "../constants/theme";
 
@@ -14,7 +15,7 @@ export default function About() {
       >
         <Text style={styles.title}>About Soft Reset</Text>
 
-        <View style={styles.card}>
+        <GlassCard style={styles.card}>
           <Text style={styles.body}>
             Soft Reset is a short nightly ritual for the moments when your mind
             won’t power down and rest feels far away.
@@ -31,7 +32,7 @@ export default function About() {
             consider reaching out to someone you trust or a licensed professional.
             You deserve care and support.
           </Text>
-        </View>
+        </GlassCard>
 
         <PrimaryButton label="Back" onPress={() => router.back()} />
       </ScrollView>
@@ -48,10 +49,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   card: {
-    borderRadius: theme.radius.m,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: theme.space.m,
     marginBottom: theme.space.l,
   },

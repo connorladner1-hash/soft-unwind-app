@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { GlassCard } from "../components/ui/GlassCard";
 import { Screen } from "../components/Screen";
 import { theme } from "../constants/theme";
 
@@ -138,11 +139,11 @@ export default function ReflectionScreen() {
 
   return (
     <Screen style={{ justifyContent: "flex-start" }}>
-      <ScreenMascot size={130} style={{ marginBottom: 12 }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
+        <ScreenMascot size={130} style={styles.mascot} />
         <Text style={styles.title}>Reflection</Text>
 
         {!!feelingStr || !!timeStr ? (
@@ -152,7 +153,7 @@ export default function ReflectionScreen() {
           </View>
         ) : null}
 
-        <View style={styles.card}>
+        <GlassCard style={styles.card}>
           {loading ? (
             <View style={styles.loadingWrap}>
               <ActivityIndicator size="large" color={theme.colors.text} />
@@ -161,7 +162,7 @@ export default function ReflectionScreen() {
           ) : (
             <Text style={styles.body}>{reflection}</Text>
           )}
-        </View>
+        </GlassCard>
 
         <PrimaryButton label="Continue" onPress={onContinue} disabled={loading} />
       </ScrollView>
@@ -172,6 +173,10 @@ export default function ReflectionScreen() {
 const styles = StyleSheet.create({
   content: {
     paddingBottom: theme.space.l,
+  },
+  mascot: {
+    alignSelf: "center",
+    marginBottom: 12,
   },
   title: {
     fontSize: theme.type.titleSize,
@@ -197,11 +202,6 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   card: {
-    borderRadius: theme.radius.m,
-    backgroundColor: theme.colors.cardStrong ?? theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.space.m,
     marginBottom: theme.space.l,
     minHeight: 160,
   },

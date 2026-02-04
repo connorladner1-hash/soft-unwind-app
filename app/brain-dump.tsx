@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { GlassCard } from "../components/ui/GlassCard";
 import { Screen } from "../components/Screen";
 import { ScreenMascot } from "../components/ScreenMascot";
 import { theme } from "../constants/theme";
@@ -52,7 +53,6 @@ export default function BrainDump() {
 
   return (
     <Screen style={{ justifyContent: "flex-start", padding: 0 }}>
-      <ScreenMascot size={140} style={{ marginBottom: 12 }} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -63,6 +63,7 @@ export default function BrainDump() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
         >
+          <ScreenMascot size={140} style={styles.mascot} />
           <Text style={styles.title}>Let it out.</Text>
           <Text style={styles.sub}>No formatting. No judgment.</Text>
           <Text style={styles.subSoft}>This is just to empty.</Text>
@@ -77,15 +78,20 @@ export default function BrainDump() {
             </View>
           ) : null}
 
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder="Write whatever your mind is holding…"
-            placeholderTextColor={theme.colors.placeholder ?? "rgba(28,28,30,0.45)"}
-            multiline
-            textAlignVertical="top"
-            style={styles.input}
-          />
+          <GlassCard style={styles.inputCard}>
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder="Write whatever your mind is holding…"
+              placeholderTextColor={
+                theme.colors.placeholder ?? "rgba(28,28,30,0.45)"
+              }
+              keyboardAppearance="dark"
+              multiline
+              textAlignVertical="top"
+              style={styles.input}
+            />
+          </GlassCard>
 
           <PrimaryButton
             label="Continue"
@@ -102,6 +108,10 @@ const styles = StyleSheet.create({
   content: {
     padding: theme.space.xl,
     paddingBottom: theme.space.xl,
+  },
+  mascot: {
+    alignSelf: "center",
+    marginBottom: 12,
   },
   title: {
     fontSize: theme.type.titleSize,
@@ -135,14 +145,11 @@ const styles = StyleSheet.create({
   },
   input: {
     minHeight: 320,
-    borderRadius: theme.radius.m,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.space.m,
     fontSize: 16,
     lineHeight: 22,
     color: theme.colors.text,
+  },
+  inputCard: {
     marginBottom: theme.space.l,
   },
 

@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { GlassCard } from "../components/ui/GlassCard";
 import { Screen } from "../components/Screen";
 import { theme } from "../constants/theme";
 
@@ -72,7 +73,7 @@ export default function CheckIn() {
         <View style={styles.grid}>
           <View style={styles.col}>
             <Text style={styles.colTitle}>Right now</Text>
-            <View style={styles.card}>
+            <GlassCard variant="tight" style={styles.card}>
               {FEELINGS.map((opt, idx) => (
                 <SelectBox
                   key={opt.id}
@@ -82,12 +83,12 @@ export default function CheckIn() {
                   onPress={() => setFeelingId(opt.id)}
                 />
               ))}
-            </View>
+            </GlassCard>
           </View>
 
           <View style={styles.col}>
             <Text style={styles.colTitle}>How late is it?</Text>
-            <View style={styles.card}>
+            <GlassCard variant="tight" style={styles.card}>
               {TIMES.map((opt, idx) => (
                 <SelectBox
                   key={opt.id}
@@ -97,7 +98,7 @@ export default function CheckIn() {
                   onPress={() => setTimeId(opt.id)}
                 />
               ))}
-            </View>
+            </GlassCard>
           </View>
         </View>
 
@@ -165,11 +166,7 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    borderRadius: theme.radius.m,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    overflow: "hidden",
+    padding: 0,
   },
 
   option: {

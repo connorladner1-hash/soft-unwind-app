@@ -7,6 +7,7 @@ import {
     View,
 } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { GlassCard } from "../components/ui/GlassCard";
 import { Screen } from "../components/Screen";
 import { ScreenMascot } from "../components/ScreenMascot";
 import { theme } from "../constants/theme";
@@ -33,6 +34,7 @@ export default function PaywallScreen() {
         {/* Toggle */}
         <View style={styles.toggle}>
           <TouchableOpacity
+            activeOpacity={0.92}
             style={[styles.toggleBtn, plan === "annual" && styles.toggleBtnActive]}
             onPress={() => setPlan("annual")}
           >
@@ -42,6 +44,7 @@ export default function PaywallScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
+            activeOpacity={0.92}
             style={[styles.toggleBtn, plan === "student" && styles.toggleBtnActive]}
             onPress={() => setPlan("student")}
           >
@@ -52,7 +55,7 @@ export default function PaywallScreen() {
         </View>
 
         {/* Plan card */}
-        <View style={styles.card}>
+        <GlassCard variant="soft" style={styles.card}>
           {plan === "annual" ? (
             <>
               <Text style={styles.cardTitle}>🌙 Yearly Calm</Text>
@@ -70,7 +73,7 @@ export default function PaywallScreen() {
               </Text>
             </>
           )}
-        </View>
+        </GlassCard>
 
         {/* Bullets */}
         <View style={styles.section}>
@@ -135,27 +138,27 @@ const styles = StyleSheet.create({
     paddingVertical: theme.space.s,
     paddingHorizontal: theme.space.l,
     borderRadius: 999,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
   },
   toggleBtnActive: {
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderColor: "rgba(255,255,255,0.18)",
   },
   toggleText: {
-    color: theme.colors.text,
-    opacity: 0.65,
-    fontWeight: "500",
+    color: "rgba(245,247,250,0.70)",
+    fontWeight: "600",
   },
   toggleTextActive: {
-    opacity: 1,
+    color: "rgba(245,247,250,0.95)",
     fontWeight: "700",
   },
 
   /* 🔹 Darker gray plan card */
   card: {
     width: "100%",
-    borderRadius: 16,
-    padding: theme.space.l,
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.14)",
   },
   cardTitle: {
     color: theme.colors.text,

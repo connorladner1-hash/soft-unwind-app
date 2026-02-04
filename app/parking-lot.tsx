@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { GlassCard } from "../components/ui/GlassCard";
 import { Screen } from "../components/Screen";
 import { theme } from "../constants/theme";
 
@@ -88,7 +89,7 @@ export default function ParkingLot() {
         <Text style={styles.subSoft}>Nothing here needs action tonight.</Text>
 
 
-        <View style={styles.card}>
+        <GlassCard variant="tight" style={styles.card}>
           {items.length === 0 ? (
             <Text style={styles.empty}>Nothing to organize right now. That’s okay.</Text>
           ) : (
@@ -104,7 +105,7 @@ export default function ParkingLot() {
               </Pressable>
             ))
           )}
-        </View>
+        </GlassCard>
 
         <Text style={styles.hint}>Tap a line to set it aside.</Text>
 
@@ -146,10 +147,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   card: {
-    borderRadius: theme.radius.m,
-    backgroundColor: theme.colors.cardStrong ?? theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    padding: 0,
     paddingVertical: theme.space.s,
     marginBottom: theme.space.s,
   },
