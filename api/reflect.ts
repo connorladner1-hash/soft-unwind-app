@@ -1,3 +1,5 @@
+// api/reflect.ts
+import { createClient } from "@supabase/supabase-js";
 
 type Req = {
   method?: string;
@@ -9,30 +11,62 @@ type Res = {
   json: (data: any) => void;
 };
 
-
 type Body = {
   dump?: string;
   feelingLabel?: string;
   timeLabel?: string;
+  // We'll use this later in Option B (Auth). Safe to include now.
+  userId?: string | null;
 };
 
-function pickOpener(feelingLabel?: string, timeLabel?: string) {
-  const f = (feelingLabel || "").toLowerCase();
-  const t = (timeLabel || "").toLowerCase();
+// ---- Supabase (server/admin) ----
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-  const late = t.includes("late") || t.includes("night") || t.includes("1 or later");
-  const stressed = f.includes("stress") || f.includes("anx") || f.includes("overwhelm") || f.includes("overthink");
+// ---- Anthropic models to try (fallback) ----
+// Keep this list simple + reliable. Add/remove as you like.
+const MODELS = [
+  "claude-3-5-sonnet-latest",
+  "claude-3-5-haiku-latest",
+];
+
+// ---- Helpers ----
+function safeLower(s?: string) {
+  return (s || "").toLowerCase();
+}
+
+function normalizeText(s: string) {
+  // Basic cleanup: remove common escaping artifacts
+  return s
+    .replace(/\\u0027/g, "'")
+    .replace(/\u0027/g, "'")
+    .replace(/\r\n/g, "\n")
+    .trim();
+}
+
+function pickOpener(feelingLabel?: string, timeLabel?: string) {
+  const f = safeLower(feelingLabel);
+  const t = safeLower(timeLabel);
+
+  const late = t.includes("late") || t.includes("night") || t.includes("1");
+  const stressed =
+    f.includes("stress") ||
+    f.includes("anx") ||
+    f.includes("overwhelm") ||
+    f.includes("overthink");
   const ok = f.includes("okay") || f.includes("fine") || f.includes("neutral");
 
   const lateBank = [
     "Hey. I know it's late and your mind's still going.",
     "You're still up, still thinking about all of this.",
-    "Late nights like this... when everything feels heavier.",
+    "Late nights like this… when everything feels heavier…",
     "It's late and you're still carrying all of this.",
   ];
 
   const stressedBank = [
-    "That's a lot spinning around in there.",
+    "That’s a lot spinning around in there.",
     "I can feel how heavy this has been for you.",
     "That sounds really overwhelming.",
     "Your mind is working overtime with all of this.",
@@ -40,181 +74,158 @@ function pickOpener(feelingLabel?: string, timeLabel?: string) {
 
   const okBank = [
     "Yeah, I get it. Just one of those days.",
-    "Nothing major, but still... a lot of little things adding up.",
+    "Nothing major, but still… a lot of little things adding up.",
     "Sometimes the quiet days are their own kind of full.",
   ];
 
-  const baseBank = [
-    "I'm here. I'm listening.",
-    "Thanks for sharing this with me.",
-    "I hear you.",
-  ];
+  const fallback = ["I hear you.", "I’m with you.", "Okay — let’s slow this down."];
 
-  const bank =
-    late && stressed ? [...lateBank, ...stressedBank] :
-    stressed ? stressedBank :
-    late ? lateBank :
-    ok ? okBank :
-    baseBank;
-
-  const seedStr = `${f}|${t}`;
-  let seed = 0;
-  for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
-  const idx = bank.length ? seed % bank.length : 0;
-
-  return bank[idx] || "I hear you.";
+  const bank = late ? lateBank : stressed ? stressedBank : ok ? okBank : fallback;
+  return bank[Math.floor(Math.random() * bank.length)];
 }
 
-export default async function handler(req: Req, res: Res) {
-
-
-  const debugInfo: string[] = [];
-
-  try {
-    const body: Body =
-      typeof req.body === "string" ? JSON.parse(req.body) : (req.body as Body);
-
-    const { dump, feelingLabel, timeLabel } = body || {};
-    const cleanDump = String(dump ?? "").trim();
-
-    debugInfo.push(`Received dump with ${cleanDump.length} chars`);
-    debugInfo.push(`Feeling: ${feelingLabel}, Time: ${timeLabel}`);
-
-    if (!cleanDump) return res.status(400).json({ error: "Missing dump text" });
-
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "Server missing ANTHROPIC_API_KEY" });
-
-    const opener = pickOpener(feelingLabel, timeLabel);
-    debugInfo.push(`Selected opener: ${opener}`);
-
-    const prompt = `You're a close, trusted friend responding to someone who just shared what's weighing on their mind.
+function buildPrompt(dump: string, opener: string) {
+  // Keep output short and app-friendly (no markdown, no lists)
+  return `
+You are a calm, supportive reflection companion.
+Write a gentle, validating reflection (4–8 sentences) that:
+- acknowledges what they said
+- helps them feel grounded
+- offers 1 small next step they can do in 60 seconds
+Avoid therapy disclaimers. Avoid bullet points. Avoid emojis. Avoid markdown.
 
 Start with: "${opener}"
 
-Then write 8-12 sentences responding to what they shared.
+User dump:
+${dump}
+`.trim();
+}
 
-EXAMPLES OF CORRECT RESPONSES:
+async function callAnthropic(model: string, prompt: string, debugInfo: string[]) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
 
-User says: "I'm so tired and annoyed that I can't just fall asleep like a normal person."
-CORRECT response: "Late nights like this... when everything feels heavier. I hear you on that frustration about not being able to fall asleep like a 'normal person' - that comparison makes it even worse, doesn't it? Like you're failing at something that should be automatic. The annoyance on top of the tiredness is such a brutal combo. Your body is exhausted but your brain just won't cooperate. It's not fair that you can't just switch off when you need to. I wish I could give you that peaceful, easy sleep you're craving. Just know I'm here with you in this frustrating late-night moment. You're not alone in this."
+  const t0 = Date.now();
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 300,
+      temperature: 0.7,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
 
-User says: "Work presentation went badly and my manager seemed disappointed."
-CORRECT response: "I hear you. That presentation not going well really stings, especially seeing that disappointment from your manager. You put effort into preparing and it didn't land the way you hoped. That's rough. The aftermath of something like that can sit heavy - replaying moments, wondering what you could have done differently. It's hard not to take it personally when someone you report to seems let down. But one tough presentation doesn't define your work or your value there. Even the best people have off days. I'm sorry it went that way today."
+  const ms = Date.now() - t0;
+  debugInfo.push(`${model} responded in ${ms}ms with status ${r.status}`);
 
-WRONG RESPONSE (DO NOT DO THIS):
-User says: "I'm so tired and annoyed that I can't just fall asleep like a normal person."
-WRONG: "Late nights like this when everything feels heavier. I hear you on the work stress and the project deadlines looming..." ← WRONG! User never mentioned work or projects!
+  if (!r.ok) {
+    let errText = "";
+    try {
+      errText = await r.text();
+    } catch {
+      errText = "(unable to read error body)";
+    }
+    debugInfo.push(`${model} error body: ${errText.slice(0, 500)}`);
+    throw new Error(`Anthropic error (${model}): ${r.status}`);
+  }
 
-NOW RESPOND TO THIS USER:
+  const data: any = await r.json();
+  const text =
+    Array.isArray(data?.content)
+      ? data.content.map((c: any) => (c?.type === "text" ? c.text : "")).join("\n")
+      : "";
 
-They're feeling: ${feelingLabel || "general"}
-Time of day: ${timeLabel || "evening"}
+  return normalizeText(text || "");
+}
 
-What they shared:
-"""${cleanDump}"""
+// ---- Handler ----
+export default async function handler(req: Req, res: Res) {
+  try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
 
-Remember: ONLY respond to what they actually wrote. If they only mentioned sleep, only talk about sleep. If they mentioned work, talk about work. Match what they shared - nothing more, nothing less.`;
+    const body = (req.body || {}) as Body;
 
-    debugInfo.push("Prepared prompt, attempting API call");
+    const dump = (body.dump || "").trim();
+    if (!dump) return res.status(400).json({ error: "Missing dump text" });
 
-    // Try all available Claude models, newest to oldest
-    const models = [
-      // Claude 3.5 models (newest)
-      "claude-3-5-sonnet-20241022",  
-      "claude-3-5-sonnet-20240620",  
-      "claude-3-5-haiku-20241022",
-      
-      // Claude 3 models (older, more widely available)
-      "claude-3-opus-20240229",
-      "claude-3-sonnet-20240229",
-      "claude-3-haiku-20240307",
-    ];
+    const opener = pickOpener(body.feelingLabel, body.timeLabel);
+    const prompt = buildPrompt(dump, opener);
 
-    for (const model of models) {
-      debugInfo.push(`Trying model: ${model}`);
-      
+    const debugInfo: string[] = [];
+    debugInfo.push(`Received dump with ${dump.length} chars`);
+    debugInfo.push(`Feeling: ${body.feelingLabel || "n/a"}, Time: ${body.timeLabel || "n/a"}`);
+    debugInfo.push(`Selected opener: ${opener}`);
+
+    // ✅ IMPORTANT FIX:
+    // Generate inside the loop, but DO NOT return inside the loop.
+    // Save the final text, then insert to Supabase AFTER the loop.
+    let finalText = "";
+    let modelUsed = "";
+
+    for (const model of MODELS) {
       try {
-        const startTime = Date.now();
-        
-        const r = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01",
-          },
-          body: JSON.stringify({
-            model,
-            max_tokens: 800,
-            temperature: 0.9,
-            messages: [{ role: "user", content: prompt }],
-          }),
-        });
-
-        const elapsed = Date.now() - startTime;
-        debugInfo.push(`${model} responded in ${elapsed}ms with status ${r.status}`);
-
-        if (!r.ok) {
-          const errorText = await r.text();
-          debugInfo.push(`${model} error: ${errorText.slice(0, 200)}`);
-          
-          // If model not found, try next one
-          if (r.status === 404) {
-            continue;
-          }
-          
-          // Other errors, return immediately
-          return res.status(r.status).json({
-            error: "API request failed",
-            details: errorText,
-            debug: debugInfo,
-          });
-        }
-
-        const data = await r.json();
-
-        const text =
-          (Array.isArray(data?.content)
-            ? data.content
-                .map((c: any) => (c?.type === "text" ? c.text : ""))
-                .join("\n")
-            : "") || "";
-
-        const trimmed = text.trim();
-        
-        if (!trimmed) {
-          debugInfo.push(`${model} returned empty response, trying next`);
+        debugInfo.push(`Trying model: ${model}`);
+        const out = await callAnthropic(model, prompt, debugInfo);
+        if (!out) {
+          debugInfo.push(`${model} returned empty text, trying next`);
           continue;
         }
-
-        debugInfo.push(`SUCCESS! Response: ${trimmed.length} chars`);
-
-        return res.status(200).json({
-          text: trimmed,
-          modelUsed: model,
-          openerUsed: opener,
-          debug: debugInfo,
-        });
-
-      } catch (fetchErr: any) {
-        debugInfo.push(`${model} fetch error: ${fetchErr.message}`);
+        finalText = out;
+        modelUsed = model;
+        debugInfo.push(`SUCCESS! Response: ${finalText.length} chars`);
+        break;
+      } catch (e: any) {
+        debugInfo.push(`Model failed: ${model} -> ${e?.message || "unknown error"}`);
         continue;
       }
     }
 
-    // If we got here, all models failed
-    return res.status(500).json({
-      error: "All models failed",
-      debug: debugInfo,
+    if (!finalText) {
+      return res.status(500).json({
+        error: "Failed to generate reflection",
+        debug: debugInfo,
+      });
+    }
+
+    // ✅ Supabase insert happens here (outside loop)
+    console.log("INSERTING REFLECTION INTO SUPABASE");
+
+    const userId = body.userId ?? null; // Option B will populate this
+
+    const { error: dbError } = await supabaseAdmin.from("reflections").insert({
+      user_id: userId,
+      feeling_id: body.feelingLabel ?? null,
+      dump,
+      reflection: finalText,
     });
 
-  } catch (err: any) {
-    debugInfo.push(`Unexpected error: ${err.message}`);
-    return res.status(500).json({
-      error: "Unexpected server error",
-      details: String(err?.message || err),
+    if (dbError) {
+      console.log("Supabase insert error:", dbError);
+      debugInfo.push(`Supabase insert error: ${dbError.message}`);
+    } else {
+      console.log("Supabase insert success");
+      debugInfo.push("Supabase insert success");
+    }
+
+    return res.status(200).json({
+      text: finalText,
+      modelUsed,
+      openerUsed: opener,
       debug: debugInfo,
+    });
+  } catch (err: any) {
+    console.log("Reflect handler fatal error:", err);
+    return res.status(500).json({
+      error: "Server error",
+      message: err?.message || "unknown",
     });
   }
 }
