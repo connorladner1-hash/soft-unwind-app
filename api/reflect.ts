@@ -1,7 +1,9 @@
-console.log("SUPABASE_URL exists:", !!process.env.SUPABASE_URL);
 console.log(
-  "SUPABASE_SERVICE_ROLE_KEY exists:",
-  !!process.env.SUPABASE_SERVICE_ROLE_KEY
+  "ENV CHECK:",
+  "SUPABASE_URL",
+  process.env.SUPABASE_URL ? "SET" : "MISSING",
+  "| SERVICE_ROLE",
+  process.env.SUPABASE_SERVICE_ROLE_KEY ? "SET" : "MISSING"
 );
 
 type Req = {
